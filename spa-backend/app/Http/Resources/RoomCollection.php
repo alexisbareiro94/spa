@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+
+class RoomCollection extends ResourceCollection
+{
+    /**
+     * Transform the resource collection into an array.
+     *
+     * @return array<int|string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return $this->collection->map(function ($room) {
+            return [
+                'id' => $room->id,
+                'number' => $room->number,
+                'capacity' => $room->capacity,
+                'showtimes' => $room->showtimes,
+                'seats' => $room->seats->groupBy('room_id')
+                    ->map(function ($seats, $roomId) {
+                        return [
+                            'room_id' => $roomId,
+                            'rows' => $seats
+                                ->groupBy('row')
+                                ->map(function ($rowSeats) {
+                                    return $rowSeats
+                                        ->pluck('number')
+                                        ->sort()
+                                        ->values();
+                                }),
+                        ];
+                    })
+            ];
+        })->values()->toArray();
+    }
+}
